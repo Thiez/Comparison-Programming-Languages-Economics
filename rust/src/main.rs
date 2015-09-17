@@ -1,7 +1,7 @@
 extern crate time;
 
-static N_GRID_CAPITAL: uint = 17820;
-static N_GRID_PRODUCTIVITY: uint = 5;
+const N_GRID_CAPITAL: usize = 17820;
+const N_GRID_PRODUCTIVITY: usize = 5;
   
 
 fn do_stuff() {
@@ -31,7 +31,7 @@ fn do_stuff() {
   let output_steady_state = capital_steady_state.powf(aalpha);
   let consumtion_steady_state = output_steady_state - capital_steady_state;
 
-  println!("Output = {:.17f}, Capital = {:.17f}, Consumption = {:.17f}",
+  println!("Output = {:.17}, Capital = {:.17}, Consumption = {:.17}",
     output_steady_state,
     capital_steady_state,
     consumtion_steady_state);
@@ -39,8 +39,8 @@ fn do_stuff() {
   let n_grid_capital = N_GRID_CAPITAL;
   let n_grid_productivity = N_GRID_PRODUCTIVITY;
   
-  let mut v_grid_capital = [0f64,..N_GRID_CAPITAL];
-  for n_capital in range(0, N_GRID_CAPITAL) {
+  let mut v_grid_capital = [0f64; N_GRID_CAPITAL];
+  for n_capital in 0..N_GRID_CAPITAL {
     v_grid_capital[n_capital] = 0.5 * capital_steady_state + 0.00001 * (n_capital as f64);
   }
   let v_grid_capital = v_grid_capital;
@@ -49,18 +49,18 @@ fn do_stuff() {
   // 3. Required matrices and vectors
   /////////////////////////////////////////////////////////////////////
 
-  let mut m_output = box () ([[0f64, ..N_GRID_PRODUCTIVITY], ..N_GRID_CAPITAL]);
-  let mut m_value_function = box () ([[0f64, ..N_GRID_PRODUCTIVITY], ..N_GRID_CAPITAL]);
-  let mut m_value_function_new = box () ([[0f64, ..N_GRID_PRODUCTIVITY], ..N_GRID_CAPITAL]);
-  let mut m_policy_function = box () ([[0f64, ..N_GRID_PRODUCTIVITY], ..N_GRID_CAPITAL]);
-  let mut expected_value_function = box () ([[0f64, ..N_GRID_PRODUCTIVITY], ..N_GRID_CAPITAL]);
+  let mut m_output = Box::new([[0f64; N_GRID_PRODUCTIVITY]; N_GRID_CAPITAL]);
+  let mut m_value_function = Box::new([[0f64; N_GRID_PRODUCTIVITY]; N_GRID_CAPITAL]);
+  let mut m_value_function_new = Box::new([[0f64; N_GRID_PRODUCTIVITY]; N_GRID_CAPITAL]);
+  let mut m_policy_function = Box::new([[0f64; N_GRID_PRODUCTIVITY]; N_GRID_CAPITAL]);
+  let mut expected_value_function = Box::new([[0f64; N_GRID_PRODUCTIVITY]; N_GRID_CAPITAL]);
 
   /////////////////////////////////////////////////////////////////////
   // 4. We pre-build output for each point in the grid
   /////////////////////////////////////////////////////////////////////
 
-  for n_productivity in range(0, N_GRID_PRODUCTIVITY) {
-    for n_capital in range(0, N_GRID_CAPITAL) {
+  for n_productivity in 0..N_GRID_PRODUCTIVITY {
+    for n_capital in 0..N_GRID_CAPITAL {
       m_output[n_capital][n_productivity] =
         v_productivity[n_productivity] * v_grid_capital[n_capital].powf(aalpha);
     }
@@ -74,27 +74,27 @@ fn do_stuff() {
   let mut max_difference = 10.0f64;
   let tolerance = 0.0000001f64;
 
-  let mut iteration = 0;
+  let mut iteration = 0u32;
 
   while max_difference > tolerance {
-    for n_productivity in range(0,N_GRID_PRODUCTIVITY) {
-      for n_capital in range(0, N_GRID_CAPITAL) {
+    for n_productivity in 0..N_GRID_PRODUCTIVITY {
+      for n_capital in 0..N_GRID_CAPITAL {
         expected_value_function[n_capital][n_productivity] = 0.0;
-        for n_productivity_next_period in range(0, N_GRID_PRODUCTIVITY) {
+        for n_productivity_next_period in 0..N_GRID_PRODUCTIVITY {
           expected_value_function[n_capital][n_productivity] +=
             m_transition[n_productivity][n_productivity_next_period] * m_value_function[n_capital][n_productivity_next_period];
         }
       }
     }
 
-    for n_productivity in range(0, N_GRID_PRODUCTIVITY) {
+    for n_productivity in 0..N_GRID_PRODUCTIVITY {
       let mut grid_capital_next_period = 0;
 
-      for n_capital in range(0, N_GRID_CAPITAL) {
+      for n_capital in 0..N_GRID_CAPITAL {
 
         let mut value_high_sofar = -100000.0;
 
-        for n_capital_next_period in range(grid_capital_next_period, N_GRID_CAPITAL) {
+        for n_capital_next_period in grid_capital_next_period..N_GRID_CAPITAL {
           let consumption = m_output[n_capital][n_productivity] - v_grid_capital[n_capital_next_period];
           let value_provisional = (1.0-bbeta) * consumption.ln() + bbeta *
               expected_value_function[n_capital_next_period][n_productivity];
@@ -113,8 +113,8 @@ fn do_stuff() {
     }
 
     let mut diff_high_sofar = -100000.0f64;
-    for n_productivity in range(0, n_grid_productivity) {
-      for n_capital in range(0, n_grid_capital) {
+    for n_productivity in 0..n_grid_productivity {
+      for n_capital in 0..n_grid_capital {
         let diff = (m_value_function[n_capital][n_productivity] -
             m_value_function_new[n_capital][n_productivity]).abs();
         diff_high_sofar = diff_high_sofar.max(diff);
